@@ -10,7 +10,9 @@
   <h2>تسجيل الدخول باستخدام رقم الهاتف</h2>
   <input type="text" id="phone" placeholder="مثلاً: +201001234567"><br><br>
 
+  <!-- هنا هيظهر reCAPTCHA -->
   <div id="recaptcha-container"></div><br>
+
   <button onclick="sendOTP()">إرسال الرمز</button>
 
   <br><br>
@@ -28,45 +30,45 @@
       appId: "1:308994128812:web:f7c677b20b249f077ad809",
       measurementId: "G-1T7X1QSFZY"
     };
-
-    // تهيئة Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // إعداد reCAPTCHA
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      size: 'normal',
-      callback: function(response) {
-        console.log('تم حل reCAPTCHA');
-      }
-    });
+    window.onload = function() {
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container',
+        {
+          size: 'normal',
+          callback: () => console.log('✅ reCAPTCHA اتفعل'),
+          'expired-callback': () => alert("انتهت صلاحية reCAPTCHA، جرب مرّة ثانية")
+        }
+      );
+      recaptchaVerifier.render().then(widgetId => window.recaptchaWidgetId = widgetId);
+    };
 
-    // إرسال OTP
     function sendOTP() {
       const phoneNumber = document.getElementById('phone').value;
-      const appVerifier = window.recaptchaVerifier;
-
-      auth.signInWithPhoneNumber(phoneNumber, appVerifier)
-        .then((confirmationResult) => {
-          window.confirmationResult = confirmationResult;
-          alert("📩 تم إرسال الرمز إلى هاتفك!");
+      if (!phoneNumber.startsWith('+')) {
+        return alert("✅ رقم الهاتف لازم يبدأ بـ + ومفتاح دولتك، زي: +20...");
+      }
+      auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
+        .then(result => {
+          window.confirmationResult = result;
+          alert("📩 أرسلنا لك رمز على الموبايل!");
         })
-        .catch((error) => {
-          console.error(error);
-          alert("⚠️ حدث خطأ: " + error.message);
+        .catch(err => {
+          console.error(err);
+          alert("⚠️ خطأ: " + err.message);
+          // لو تحب ممكن أضيف
+
         });
     }
 
-    // التحقق من OTP
     function verifyOTP() {
-      const code = document.getElementById('otp').value;
+      const code = document.getElementById('otp').value.trim();
+      if (code==='') return alert("اكتب رمز التحقق أو OTP");
       window.confirmationResult.confirm(code)
-        .then((result) => {
-          alert("✅ تم تسجيل الدخول بنجاح!");
-        })
-        .catch((error) => {
-          alert("❌ الرمز غير صحيح أو منتهي الصلاحية");
-        });
+        .then(() => alert("✅ الOTP صح! دخلت بنجاح"))
+        .catch(() => alert("❌ الرمز خطأ أو منتهي."));
     }
   </script>
 </body>
