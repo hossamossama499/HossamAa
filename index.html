@@ -1,21 +1,73 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>تسجيل برقم الهاتف</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+</head>
+<body style="direction: rtl; font-family: sans-serif; text-align: center; margin-top: 50px;">
+  <h2>تسجيل الدخول باستخدام رقم الهاتف</h2>
+  <input type="text" id="phone" placeholder="مثلاً: +201001234567"><br><br>
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDpVbmJ_B6l6vycV7z2SmKYOe8zU8Ua88I",
-  authDomain: "hossam-8a237.firebaseapp.com",
-  projectId: "hossam-8a237",
-  storageBucket: "hossam-8a237.firebasestorage.app",
-  messagingSenderId: "308994128812",
-  appId: "1:308994128812:web:f7c677b20b249f077ad809",
-  measurementId: "G-1T7X1QSFZY"
-};
+  <div id="recaptcha-container"></div><br>
+  <button onclick="sendOTP()">إرسال الرمز</button>
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+  <br><br>
+  <input type="text" id="otp" placeholder="ادخل رمز التحقق"><br><br>
+  <button onclick="verifyOTP()">تأكيد الرمز</button>
+
+  <script>
+    // إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpVbmJ_B6l6vycV7z2SmKYOe8zU8Ua88I",
+      authDomain: "hossam-8a237.firebaseapp.com",
+      projectId: "hossam-8a237",
+      storageBucket: "hossam-8a237.firebasestorage.app",
+      messagingSenderId: "308994128812",
+      appId: "1:308994128812:web:f7c677b20b249f077ad809",
+      measurementId: "G-1T7X1QSFZY"
+    };
+
+    // تهيئة Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // إعداد reCAPTCHA
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      size: 'normal',
+      callback: function(response) {
+        console.log('تم حل reCAPTCHA');
+      }
+    });
+
+    // إرسال OTP
+    function sendOTP() {
+      const phoneNumber = document.getElementById('phone').value;
+      const appVerifier = window.recaptchaVerifier;
+
+      auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+        .then((confirmationResult) => {
+          window.confirmationResult = confirmationResult;
+          alert("📩 تم إرسال الرمز إلى هاتفك!");
+        })
+        .catch((error) => {
+          console.error(error);
+          alert("⚠️ حدث خطأ: " + error.message);
+        });
+    }
+
+    // التحقق من OTP
+    function verifyOTP() {
+      const code = document.getElementById('otp').value;
+      window.confirmationResult.confirm(code)
+        .then((result) => {
+          alert("✅ تم تسجيل الدخول بنجاح!");
+        })
+        .catch((error) => {
+          alert("❌ الرمز غير صحيح أو منتهي الصلاحية");
+        });
+    }
+  </script>
+</body>
+</html>
